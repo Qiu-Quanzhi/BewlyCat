@@ -1,11 +1,14 @@
 <script lang="ts" setup>
 import QRCodeVue from 'qrcode.vue'
+import { useI18n } from 'vue-i18n'
 import { useToast } from 'vue-toastification'
 import draggable from 'vuedraggable'
 
 import Radio from '~/components/Radio.vue'
+import Select from '~/components/Select.vue'
 import { HomeSubPage } from '~/contentScripts/views/Home/types'
 import { accessKey, settings } from '~/logic'
+import type { VideoCardFontSizeSetting, VideoCardLayoutSetting } from '~/logic/storage'
 import { useMainStore } from '~/stores/mainStore'
 import { getTVLoginQRCode, pollTVLoginQRCode, revokeAccessKey } from '~/utils/authProvider'
 
@@ -17,6 +20,20 @@ import FilterByUserTable from './components/FilterByUserTable.vue'
 
 const mainStore = useMainStore()
 const toast = useToast()
+const { t } = useI18n()
+
+const fontSizeOptionValues: VideoCardFontSizeSetting[] = ['xs', 'sm', 'base', 'lg']
+const videoCardLayoutOptionValues: VideoCardLayoutSetting[] = ['modern', 'old']
+
+const videoCardFontSizeOptions = computed(() => fontSizeOptionValues.map(value => ({
+  label: t(`settings.font_size_option.${value}`),
+  value,
+})))
+
+const videoCardLayoutOptions = computed(() => videoCardLayoutOptionValues.map(value => ({
+  label: t(`settings.video_card_layout_option.${value}`),
+  value,
+})))
 
 const showSearchPageModeSharedSettings = ref<boolean>(false)
 const showQRCodeDialog = ref<boolean>(false)
@@ -435,12 +452,19 @@ function handleToggleHomeTab(tab: any) {
     </SettingsItemGroup>
 
     <SettingsItemGroup :title="$t('settings.group_home_layout')">
+      <SettingsItem
+        :title="$t('settings.video_card_layout')"
+        :desc="$t('settings.video_card_layout_desc')"
+      >
+        <Select v-model="settings.videoCardLayout" :options="videoCardLayoutOptions" w="full" />
+      </SettingsItem>
+
       <SettingsItem :title="$t('settings.home_adaptive_card_min_width')" :desc="$t('settings.home_adaptive_card_min_width_desc')">
         <div flex="~ justify-end" w-full>
           <Input
             v-model="settings.homeAdaptiveCardMinWidth"
             type="number"
-            :min="120"
+            :min="160"
             :max="600"
             flex-1
           >
@@ -470,6 +494,20 @@ function handleToggleHomeTab(tab: any) {
             </template>
           </Input>
         </div>
+      </SettingsItem>
+
+      <SettingsItem
+        :title="$t('settings.video_card_author_font_size')"
+        :desc="$t('settings.video_card_author_font_size_desc')"
+      >
+        <Select v-model="settings.videoCardAuthorFontSize" :options="videoCardFontSizeOptions" w="full" />
+      </SettingsItem>
+
+      <SettingsItem
+        :title="$t('settings.video_card_meta_font_size')"
+        :desc="$t('settings.video_card_meta_font_size_desc')"
+      >
+        <Select v-model="settings.videoCardMetaFontSize" :options="videoCardFontSizeOptions" w="full" />
       </SettingsItem>
     </SettingsItemGroup>
 
