@@ -87,7 +87,7 @@ const gridStyle = computed(() => {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(var(--bew-home-card-min-width, 280px), 1fr))',
   }
-  const baseWidth = Math.max(120, settings.value.homeAdaptiveCardMinWidth || 280)
+  const baseWidth = Math.max(160, settings.value.homeAdaptiveCardMinWidth || 280)
   style['--bew-home-card-min-width'] = `${baseWidth}px`
   return style
 })
@@ -691,8 +691,10 @@ defineExpose({
               followed: !!video.item.is_followed,
               mid: video.item.owner.mid,
             },
+            tag: video.item?.rcmd_reason?.content,
             view: video.item.stat.view,
             danmaku: video.item.stat.danmaku,
+            like: video.item.stat.like,
             publishedTimestamp: video.item.pubdate,
             bvid: video.item.bvid,
             cid: video.item.cid,
@@ -720,7 +722,11 @@ defineExpose({
               followed: video.item?.bottom_rcmd_reason === '已关注' || video.item?.bottom_rcmd_reason === '已關注',
               mid: video.item?.mask?.avatar.up_id,
             },
-            capsuleText: video.item?.desc?.split('·')[1],
+            capsuleText:
+              video.item?.desc?.split('·')?.[1]?.trim()
+              || ((video.item?.bottom_rcmd_reason?.trim() === '已关注' || video.item?.bottom_rcmd_reason?.trim() === '已關注')
+                ? video.item?.bottom_rcmd_reason?.trim()
+                : undefined),
             bvid: video.item.bvid,
             viewStr: video.item.cover_left_text_1,
             danmakuStr: video.item.cover_left_text_2,

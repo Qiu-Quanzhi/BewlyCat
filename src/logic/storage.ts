@@ -56,6 +56,9 @@ export interface UpVolumeConfig {
   lastUpdated: number // 最后更新时间戳
 }
 
+export type VideoCardFontSizeSetting = 'xs' | 'sm' | 'base' | 'lg'
+export type VideoCardLayoutSetting = 'modern' | 'old'
+
 // 本地存储配置接口（不同步到云端的配置）
 export interface LocalSettings {
   // 壁纸相关
@@ -71,6 +74,7 @@ export interface Settings {
   enableGridLayoutSwitcher: boolean
   enableHorizontalScrolling: boolean
   showIPLocation: boolean // 添加显示IP归属地设置项
+  showSex: boolean // 添加显示性别设置项
 
   language: string
   customizeFont: 'default' | 'recommend' | 'custom'
@@ -106,6 +110,7 @@ export interface Settings {
   topBarIconBadges: 'number' | 'dot' | 'none'
   showWatchLaterBadge: boolean
   topBarComponentsConfig: { key: string, visible: boolean, badgeType: 'number' | 'dot' | 'none' }[]
+  topBarPinnedChannels: string[]
   openNotificationsPageAsDrawer: boolean
   showBCoinReceiveReminder: boolean
   autoReceiveBCoinCoupon: boolean
@@ -178,6 +183,12 @@ export interface Settings {
   homeAdaptiveTitleFontSize: number
   // Auto adjust title font size based on grid width
   homeAdaptiveTitleAutoSize: boolean
+  // Video card author (UP) font size token
+  videoCardAuthorFontSize: VideoCardFontSizeSetting
+  // Video card tag/meta font size token
+  videoCardMetaFontSize: VideoCardFontSizeSetting
+  // Preferred video card layout
+  videoCardLayout: VideoCardLayoutSetting
   useSearchPageModeOnHomePage: boolean
   searchPageModeWallpaperFixed: boolean
   preserveForYouState: boolean
@@ -189,6 +200,7 @@ export interface Settings {
 
   // Video Player
   defaultVideoPlayerMode: 'default' | 'webFullscreen' | 'widescreen'
+  defaultDanmakuState: 'system' | 'on' | 'off'
   disableAutoPlayCollection: boolean
   keepCollectionVideoDefaultMode: boolean // 合集视频保持默认模式
   autoExitFullscreenOnEnd: boolean // 全屏播放完毕后自动退出
@@ -223,6 +235,7 @@ export const originalSettings: Settings = {
   enableGridLayoutSwitcher: true,
   enableHorizontalScrolling: false,
   showIPLocation: true, // 默认启用IP归属地显示
+  showSex: true, // 默认启用性别显示
   language: '',
   customizeFont: 'default',
   fontFamily: '',
@@ -264,6 +277,7 @@ export const originalSettings: Settings = {
     { key: 'upload', visible: true, badgeType: 'none' },
     { key: 'notifications', visible: true, badgeType: 'number' },
   ],
+  topBarPinnedChannels: [],
   openNotificationsPageAsDrawer: true,
   showBCoinReceiveReminder: true,
   autoReceiveBCoinCoupon: false,
@@ -333,6 +347,9 @@ export const originalSettings: Settings = {
   homeAdaptiveCardMinWidth: 280,
   homeAdaptiveTitleFontSize: 16,
   homeAdaptiveTitleAutoSize: true,
+  videoCardAuthorFontSize: 'sm',
+  videoCardMetaFontSize: 'xs',
+  videoCardLayout: 'modern',
   useSearchPageModeOnHomePage: false,
   searchPageModeWallpaperFixed: false,
   preserveForYouState: false,
@@ -344,6 +361,7 @@ export const originalSettings: Settings = {
 
   // Video Player
   defaultVideoPlayerMode: 'default',
+  defaultDanmakuState: 'system',
   disableAutoPlayCollection: false,
   keepCollectionVideoDefaultMode: false, // 合集视频保持默认模式，默认关闭
   autoExitFullscreenOnEnd: false, // 全屏播放完毕后自动退出，默认关闭

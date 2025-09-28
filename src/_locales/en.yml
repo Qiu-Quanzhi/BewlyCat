@@ -7,6 +7,8 @@ common:
   viewWithoutNum: ' views'
   danmaku: no danmaku | {count} danmaku | {count} danmakus
   danmakuWithoutNum: ' danmakus'
+  like: no like | {count} like | {count} likes
+  likeWithoutNum: ' likes'
   anime_follow_count: no follow | {count} follow | {count} follows
   year: year ago | years ago
   month: month ago | months ago
@@ -36,6 +38,7 @@ common:
     import: Import
     export: Export
     undo_refresh: Undo Refresh
+    remove: Remove
   table:
     index: Index
     title: Title
@@ -156,6 +159,12 @@ settings:
     annual reports. If you don't want these to be accidentally removed, please
     disable this option.
   video_default_player_mode: Default video display mode
+  video_danmaku_default_state: Default danmaku state
+  video_danmaku_default_state_desc: Automatically toggle danmaku when a video loads, or leave it unchanged.
+  video_danmaku_default_state_opt:
+    system: Do not adjust
+    on: Always enable
+    off: Always disable
   video_player_mode:
     default: Default
     web_fullscreen: Web Fullscreen
@@ -185,14 +194,35 @@ settings:
   auto_receive_bcoin_coupon_desc: When enabled, B-coin coupons will be automatically received when detected
   open_notifications_page_as_drawer: Open notifications page as drawer
   home_adaptive_card_min_width: Grid adaptive width
-  home_adaptive_card_min_width_desc: Controls base column width (px); smaller value shows more columns. Minimum 120px enforced. Layout auto-adjusts based on this value and available page width.
+  home_adaptive_card_min_width_desc: Controls base column width (px); smaller value shows more columns. Minimum 160px enforced. Layout auto-adjusts based on this value and available page width.
   home_adaptive_title_auto_size: Auto adjust title font size
   home_adaptive_title_auto_size_desc: Adjusts title font size based on the grid width
   home_adaptive_title_font_size: Title font size
   home_adaptive_title_font_size_desc: Fixed title font size (px); disabled when auto is on
+  video_card_author_font_size: UP info font size
+  video_card_author_font_size_desc: Controls the font size for uploader names shown on video cards.
+  video_card_meta_font_size: Tag & timestamp font size
+  video_card_meta_font_size_desc: Controls the font size for tags and timestamps shown below the title.
+  video_card_layout: Video card layout
+  video_card_layout_desc: Switch between the redesigned card and the legacy layout.
+  video_card_layout_option:
+    modern: Modern layout
+    old: Classic layout
+  font_size_option:
+    xs: Extra small
+    sm: Small
+    base: Medium
+    lg: Large
   group_topbar_components: Top Bar Components Settings
   topbar_components_adjustment: Top Bar Components Badge Settings
   topbar_components_adjustment_desc: Configure the badge display mode for each top bar icon
+  group_topbar_pinned_channels: Top Bar Pinned Channels
+  topbar_pinned_channels_desc: Choose items from the logo dropdown to keep directly on the top bar and arrange their priority.
+  topbar_pinned_channels_title: Pinned channels
+  topbar_pinned_channels_hint: Click a tile to pin or unpin it; the order follows the sequence of your clicks. Items toward the end hide first when space is tight.
+  topbar_pinned_channels_all_selected: All channels have already been pinned.
+  topbar_pinned_channels_empty: You have not pinned any channels yet.
+  topbar_pinned_channels_order_tip: Selection order follows your clicks. Click an item again to unpin it.
   badge_type: Badge Type
   always_use_dock: Always use the dock
   always_use_dock_desc: >-
@@ -476,6 +506,8 @@ settings:
   clean_url_argument_desc: Automatically clean tracking parameters from URLs to make links cleaner
   show_ip_location: Show IP home location
   show_ip_location_desc: Display IP home in the video/dynamic comment area
+  show_sex: Show user gender
+  show_sex_desc: Display user gender in the video/dynamic comment area
   video_player_scroll: Scroll after adjusting the display mode
   video_player_scroll_desc: >-
     When enabled, it will automatically scroll to the appropriate position when

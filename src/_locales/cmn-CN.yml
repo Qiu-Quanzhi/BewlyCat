@@ -7,6 +7,8 @@ common:
   viewWithoutNum: 次
   danmaku: '{count} 弹幕'
   danmakuWithoutNum: 弹幕
+  like: '{count} 点赞'
+  likeWithoutNum: 点赞
   anime_follow_count: '{count}人关注'
   year: 年前
   month: 个月前
@@ -36,6 +38,7 @@ common:
     import: 导入
     export: 导出
     undo_refresh: 撤销刷新
+    remove: 移除
   table:
     index: 索引
     title: 标题
@@ -143,6 +146,12 @@ settings:
   block_top_search_page_ads_desc: |
     有时候，搜索结果上方的广告实际上是年末总结或年度报告。 如果你不想这些内容被误删除，请禁用此选项。
   video_default_player_mode: 视频默认显示模式
+  video_danmaku_default_state: 视频默认弹幕状态
+  video_danmaku_default_state_desc: 打开视频时自动调整弹幕开关，也可以保持原样。
+  video_danmaku_default_state_opt:
+    system: 不调整
+    on: 默认开启
+    off: 默认关闭
   video_player_mode:
     default: 默认
     web_fullscreen: 网页全屏
@@ -197,14 +206,35 @@ settings:
   auto_receive_bcoin_coupon_desc: 启用后，当检测到有未领取的B币券时将自动领取
   open_notifications_page_as_drawer: 以抽屉形式打开通知页面
   home_adaptive_card_min_width: 网格自适应宽度
-  home_adaptive_card_min_width_desc: 控制每列的基准宽度（像素），值越小列数越多。最小值强制为 120px。页面会基于此值并结合实际可用网页宽度自动调整布局。
+  home_adaptive_card_min_width_desc: 控制每列的基准宽度（像素），值越小列数越多。最小值强制为 160px。页面会基于此值并结合实际可用网页宽度自动调整布局。
   home_adaptive_title_auto_size: 标题字号自适应
   home_adaptive_title_auto_size_desc: 根据网格宽度自动调整标题字号
   home_adaptive_title_font_size: 标题字号
   home_adaptive_title_font_size_desc: 固定的标题字号（像素），开启自适应时不生效
+  video_card_author_font_size: UP 信息字号
+  video_card_author_font_size_desc: 控制视频卡片上 UP 主昵称的字号。
+  video_card_meta_font_size: 标签与时间字号
+  video_card_meta_font_size_desc: 控制标题下方标签与时间信息的字号。
+  video_card_layout: 视频卡片布局
+  video_card_layout_desc: 在新版与旧版视频卡片显示样式之间切换。
+  video_card_layout_option:
+    modern: 新版
+    old: 经典版
+  font_size_option:
+    xs: 特小
+    sm: 小
+    base: 中
+    lg: 大
   group_topbar_components: 顶栏组件设置
   topbar_components_adjustment: 顶栏组件角标设置
   topbar_components_adjustment_desc: 配置各个顶栏图标的角标显示方式
+  group_topbar_pinned_channels: 顶栏常驻分区
+  topbar_pinned_channels_desc: 可以将 Logo 展开中的分区固定在顶栏外侧，并自定义显示顺序。
+  topbar_pinned_channels_title: 常驻分区
+  topbar_pinned_channels_hint: 点击卡片即可固定或取消，点击顺序决定展示顺序。靠后的分区会在空间不足时优先隐藏。
+  topbar_pinned_channels_all_selected: 所有可用分区都已添加。
+  topbar_pinned_channels_empty: 还没有添加任何常驻分区。
+  topbar_pinned_channels_order_tip: 点击顺序决定展示顺序，再次点击可取消固定。
   badge_type: 角标类型
   always_use_dock: 总是使用 Dock 栏
   always_use_dock_desc: 启用后，Dock 栏将始终显示，侧边栏将隐藏。我们推荐你同时启用自动隐藏 Dock 栏。
@@ -411,6 +441,8 @@ settings:
   clean_url_argument_desc: 自动清理URL中的追踪参数，使链接更加简洁
   show_ip_location: 显示IP归属地
   show_ip_location_desc: 在视频/动态评论区显示IP归属地
+  show_sex: 显示用户性别
+  show_sex_desc: 在视频/动态评论区显示用户性别
   volume_balance:
     title: 音量均衡
     enable: 启用音量均衡

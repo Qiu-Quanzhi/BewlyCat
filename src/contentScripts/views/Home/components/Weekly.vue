@@ -32,7 +32,7 @@ const gridStyle = computed(() => {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(var(--bew-home-card-min-width, 280px), 1fr))',
   }
-  const baseWidth = Math.max(120, settings.value.homeAdaptiveCardMinWidth || 280)
+  const baseWidth = Math.max(160, settings.value.homeAdaptiveCardMinWidth || 280)
   style['--bew-home-card-min-width'] = `${baseWidth}px`
   return style
 })
@@ -163,6 +163,8 @@ defineExpose({ initData })
           },
           view: video.stat?.view,
           danmaku: video.stat?.danmaku,
+          like: video.stat?.like,
+          likeStr: video.stat?.like_str ?? video.stat?.like,
           publishedTimestamp: video.pubdate,
           bvid: video.bvid,
           cid: video.cid,

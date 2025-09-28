@@ -36,7 +36,7 @@ const gridStyle = computed(() => {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(var(--bew-home-card-min-width, 280px), 1fr))',
   }
-  const baseWidth = Math.max(120, settings.value.homeAdaptiveCardMinWidth || 280)
+  const baseWidth = Math.max(160, settings.value.homeAdaptiveCardMinWidth || 280)
   style['--bew-home-card-min-width'] = `${baseWidth}px`
   return style
 })
@@ -120,6 +120,8 @@ defineExpose({ initData })
           } : undefined,
           view: video.item.stat?.view,
           danmaku: video.item.stat?.danmaku,
+          like: video.item.stat?.like,
+          likeStr: video.item.stat?.like_str ?? video.item.stat?.like,
           publishedTimestamp: video.item.pubdate,
           bvid: video.item.bvid,
           cid: video.item.cid,
