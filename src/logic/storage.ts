@@ -71,6 +71,7 @@ export interface Settings {
   enableGridLayoutSwitcher: boolean
   enableHorizontalScrolling: boolean
   showIPLocation: boolean // 添加显示IP归属地设置项
+  showSex: boolean // 添加显示性别设置项
 
   language: string
   customizeFont: 'default' | 'recommend' | 'custom'
@@ -106,6 +107,7 @@ export interface Settings {
   topBarIconBadges: 'number' | 'dot' | 'none'
   showWatchLaterBadge: boolean
   topBarComponentsConfig: { key: string, visible: boolean, badgeType: 'number' | 'dot' | 'none' }[]
+  topBarPinnedChannels: string[]
   openNotificationsPageAsDrawer: boolean
   showBCoinReceiveReminder: boolean
   autoReceiveBCoinCoupon: boolean
@@ -189,6 +191,7 @@ export interface Settings {
 
   // Video Player
   defaultVideoPlayerMode: 'default' | 'webFullscreen' | 'widescreen'
+  defaultDanmakuState: 'system' | 'on' | 'off'
   disableAutoPlayCollection: boolean
   keepCollectionVideoDefaultMode: boolean // 合集视频保持默认模式
   autoExitFullscreenOnEnd: boolean // 全屏播放完毕后自动退出
@@ -223,6 +226,7 @@ export const originalSettings: Settings = {
   enableGridLayoutSwitcher: true,
   enableHorizontalScrolling: false,
   showIPLocation: true, // 默认启用IP归属地显示
+  showSex: true, // 默认启用性别显示
   language: '',
   customizeFont: 'default',
   fontFamily: '',
@@ -264,6 +268,7 @@ export const originalSettings: Settings = {
     { key: 'upload', visible: true, badgeType: 'none' },
     { key: 'notifications', visible: true, badgeType: 'number' },
   ],
+  topBarPinnedChannels: [],
   openNotificationsPageAsDrawer: true,
   showBCoinReceiveReminder: true,
   autoReceiveBCoinCoupon: false,
@@ -344,6 +349,7 @@ export const originalSettings: Settings = {
 
   // Video Player
   defaultVideoPlayerMode: 'default',
+  defaultDanmakuState: 'system',
   disableAutoPlayCollection: false,
   keepCollectionVideoDefaultMode: false, // 合集视频保持默认模式，默认关闭
   autoExitFullscreenOnEnd: false, // 全屏播放完毕后自动退出，默认关闭

@@ -8,11 +8,10 @@ import { useBewlyApp } from '~/composables/useAppProvider'
 import { accessKey, settings } from '~/logic'
 import type { VideoInfo } from '~/models/video/videoInfo'
 import type { VideoPreviewResult } from '~/models/video/videoPreview'
-import { useMainStore } from '~/stores/mainStore'
 import { useTopBarStore } from '~/stores/topBarStore'
 import api from '~/utils/api'
 import { getTvSign, TVAppKey } from '~/utils/authProvider'
-import { calcCurrentTime, calcTimeSince, numFormatter } from '~/utils/dataFormatter'
+import { calcCurrentTime, calcTimeSince, numFormatter, parseStatNumber } from '~/utils/dataFormatter'
 import { getCSRF, removeHttpFromUrl } from '~/utils/main'
 import { openLinkInBackground } from '~/utils/tabs'
 
@@ -43,7 +42,6 @@ interface Props {
 
 const toast = useToast()
 const { mainAppRef, openIframeDrawer } = useBewlyApp()
-const { setActivatedCover } = useMainStore()
 const topBarStore = useTopBarStore()
 
 const showVideoOptions = ref<boolean>(false)
@@ -88,8 +86,7 @@ const videoUrl = computed(() => {
 
 const isInWatchLater = ref<boolean>(false)
 const isHover = ref<boolean>(false)
-const mouseEnterTimeOut = ref()
-const mouseLeaveTimeOut = ref()
+const mouseEnterTimeOut = ref<ReturnType<typeof setTimeout> | null>(null)
 const previewVideoUrl = ref<string>('')
 const contentVisibility = ref<'auto' | 'visible'>('auto')
 const videoElement = ref<HTMLVideoElement | null>(null)
@@ -97,15 +94,221 @@ const videoElement = ref<HTMLVideoElement | null>(null)
 // Track actual card width for better auto title sizing
 const cardRootRef = ref<HTMLElement | null>(null)
 let cardResizeObserver: ResizeObserver | null = null
+const cardWidth = ref<number>(0)
+
+const videoStatNumbers = computed(() => {
+  if (!props.video) {
+    return {
+      view: undefined,
+      danmaku: undefined,
+      like: undefined,
+    }
+  }
+
+  const { view, viewStr, danmaku, danmakuStr, like, likeStr } = props.video
+
+  return {
+    view: parseStatNumber(view ?? viewStr),
+    danmaku: parseStatNumber(danmaku ?? danmakuStr),
+    like: parseStatNumber(like ?? likeStr),
+  }
+})
+
+const coverStatValues = computed(() => {
+  if (!props.video) {
+    return {
+      view: '',
+      danmaku: '',
+      like: '',
+      duration: '',
+    }
+  }
+
+  const stats = videoStatNumbers.value
+
+  return {
+    view: formatStatValue(stats.view, props.video.viewStr),
+    danmaku: formatStatValue(stats.danmaku, props.video.danmakuStr),
+    like: formatStatValue(stats.like, props.video.likeStr),
+    duration: props.video.duration
+      ? calcCurrentTime(props.video.duration)
+      : props.video.durationStr ?? '',
+  }
+})
+
+const coverStatsVisibility = computed(() => {
+  const { view, danmaku, like, duration } = coverStatValues.value
+  const width = cardWidth.value
+
+  let showDanmaku = Boolean(danmaku)
+  let showLike = Boolean(like)
+
+  if (width && width < 240)
+    showLike = false
+  if (width && width < 210)
+    showDanmaku = false
+
+  return {
+    view: Boolean(view),
+    danmaku: showDanmaku,
+    like: showLike,
+    duration: Boolean(duration),
+  }
+})
+
+const hasCoverStats = computed(() => {
+  const visibility = coverStatsVisibility.value
+  const values = coverStatValues.value
+
+  return (
+    (visibility.view && values.view)
+    || (visibility.danmaku && values.danmaku)
+    || (visibility.like && values.like)
+    || (visibility.duration && values.duration)
+  )
+})
+
+const shouldHideCoverStats = computed(() => props.showPreview && settings.value.enableVideoPreview && isHover.value)
+
+const statSuffixPattern = /(播放量?|观看|弹幕|点赞|views?|likes?|danmakus?|comments?|回复|人气|转发|分享|[次条人])/gi
+const statSeparatorPattern = /[•·]/g
+
+const DEFAULT_TITLE_LINE_HEIGHT = 1.35
+const CUSTOM_TITLE_LINE_HEIGHT = 1.25
+
+const titleStyle = computed(() => {
+  const { homeAdaptiveTitleAutoSize, homeAdaptiveTitleFontSize } = settings.value
+
+  if (!homeAdaptiveTitleAutoSize && homeAdaptiveTitleFontSize) {
+    return {
+      fontSize: `${homeAdaptiveTitleFontSize}px`,
+      lineHeight: CUSTOM_TITLE_LINE_HEIGHT.toString(),
+      '--bew-title-line-height': CUSTOM_TITLE_LINE_HEIGHT.toString(),
+    }
+  }
+
+  return {
+    '--bew-title-line-height': DEFAULT_TITLE_LINE_HEIGHT.toString(),
+  }
+})
+
+const highlightTags = computed(() => {
+  if (!props.video)
+    return [] as string[]
+
+  const tags: string[] = []
+  const stats = videoStatNumbers.value
+  const viewCount = stats.view ?? 0
+
+  if (viewCount <= 0)
+    return tags
+
+  if (viewCount >= 10_000) {
+    const likeCount = stats.like ?? 0
+    const likeRatio = viewCount > 0 ? likeCount / viewCount : 0
+    if ((likeRatio >= 0.04)
+      || (viewCount >= 100_000 && likeRatio >= 0.03)
+      || (viewCount >= 200_000 && likeRatio >= 0.02)
+      || (viewCount >= 1_000_000 && likeRatio >= 0.01)) {
+      tags.push('高赞')
+    }
+
+    const danmakuCount = stats.danmaku ?? 0
+    if ((danmakuCount / viewCount > 0.004)
+      || (danmakuCount / viewCount > 0.003 && viewCount >= 100_000)
+      || (danmakuCount / viewCount > 0.002 && viewCount >= 200_000)
+      || (danmakuCount / viewCount > 0.001 && viewCount >= 1_000_000)) {
+      tags.push('高互动')
+    }
+  }
+
+  const durationTag = getDurationHighlight(props.video)
+
+  if (durationTag)
+    tags.push(durationTag)
+
+  // 百万播放标签 - 只有在外部tag没有播放字眼时显示，且优先级最后
+  if (viewCount >= 1_000_000) {
+    const hasPlayKeyword = props.video.tag && /播放|观看|views?|play/i.test(props.video.tag)
+    if (!hasPlayKeyword) {
+      tags.push('百万播放')
+    }
+  }
+
+  if (props.video.tag) {
+    // tags只返回一个
+    return tags.slice(0, 1)
+  }
+  else {
+    // 最多返回2个，避免越界
+    return tags.slice(0, 2)
+  }
+})
+
+function getDurationHighlight(video: Video) {
+  const durationInSeconds = getDurationInSeconds(video)
+
+  if (!durationInSeconds)
+    return
+
+  if (durationInSeconds >= 40 * 60)
+    return '超长视频'
+
+  if (durationInSeconds >= 20 * 60)
+    return '长视频'
+}
+
+function getDurationInSeconds(video: Video) {
+  const { duration } = video
+  if (typeof duration === 'number' && duration > 0)
+    return duration
+
+  return parseDurationStr(video.durationStr)
+}
+
+function parseDurationStr(durationStr?: string) {
+  if (!durationStr)
+    return
+
+  const parts = durationStr.split(':').map(part => Number(part))
+  if (parts.some(part => Number.isNaN(part)))
+    return
+
+  let seconds = 0
+  for (const value of parts)
+    seconds = seconds * 60 + value
+
+  return seconds
+}
+
+function formatStatValue(count?: number, countStr?: string) {
+  if (typeof count === 'number')
+    return numFormatter(count).trim()
+  if (!countStr)
+    return ''
+  const sanitized = countStr
+    .replace(statSuffixPattern, '')
+    .replace(statSeparatorPattern, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return sanitized || countStr.trim()
+}
 
 onMounted(() => {
   const el = cardRootRef.value
   if (!el)
     return
+  const initialRect = el.getBoundingClientRect()
+  if (initialRect.width) {
+    const width = Math.round(initialRect.width)
+    cardWidth.value = width
+    el.style.setProperty('--bew-card-width', `${width}px`)
+  }
   cardResizeObserver = new ResizeObserver((entries) => {
     for (const entry of entries) {
       const width = entry.contentRect.width
       el.style.setProperty('--bew-card-width', `${Math.round(width)}px`)
+      cardWidth.value = Math.round(width)
     }
   })
   cardResizeObserver.observe(el)
@@ -197,30 +400,24 @@ function toggleWatchLater() {
 }
 
 function handleMouseEnter() {
-  if (props.video)
-    setActivatedCover(`${removeHttpFromUrl(props.video.cover)}@672w_378h_1c_!web-home-common-cover`)
-
   // fix #789
   contentVisibility.value = 'visible'
-  if (settings.value.hoverVideoCardDelayed) {
-    mouseEnterTimeOut.value = setTimeout(() => {
-      isHover.value = true
-      clearTimeout(mouseLeaveTimeOut.value)
-    }, 1200)
-  }
-  else {
-    mouseEnterTimeOut.value = setTimeout(() => {
-      isHover.value = true
-      clearTimeout(mouseLeaveTimeOut.value)
-    }, 500)
-  }
+  if (mouseEnterTimeOut.value)
+    clearTimeout(mouseEnterTimeOut.value)
+  const delay = settings.value.hoverVideoCardDelayed ? 1200 : 500
+  mouseEnterTimeOut.value = setTimeout(() => {
+    mouseEnterTimeOut.value = null
+    isHover.value = true
+  }, delay)
 }
 
 function handelMouseLeave() {
   contentVisibility.value = 'auto'
   isHover.value = false
-  clearTimeout(mouseEnterTimeOut.value)
-  clearTimeout(mouseLeaveTimeOut.value)
+  if (mouseEnterTimeOut.value) {
+    clearTimeout(mouseEnterTimeOut.value)
+    mouseEnterTimeOut.value = null
+  }
 }
 
 function handleClick(event: MouseEvent) {
@@ -315,7 +512,7 @@ provide('getVideoType', () => props.type!)
     ring="hover:8 hover:$bew-fill-2 active:8 active:$bew-fill-3"
     bg="hover:$bew-fill-2 active:$bew-fill-3"
     transform="~ translate-z-0"
-    mb-4
+    mb-3
   >
     <div v-if="!skeleton && video">
       <div
@@ -337,7 +534,7 @@ provide('getVideoType', () => props.type!)
             class="group/cover"
             :class="horizontal ? 'horizontal-card-cover' : 'vertical-card-cover'"
             shrink-0
-            h-fit relative bg="$bew-skeleton" rounded="$bew-radius"
+            h-fit relative bg="$bew-skeleton" rounded="$bew-radius" overflow-hidden
             cursor-pointer
             group-hover:z-2
             transform="~ translate-z-0"
@@ -412,22 +609,6 @@ provide('getVideoType', () => props.type!)
             </div>
 
             <template v-if="!removed">
-              <!-- Video Duration -->
-              <div
-                v-if="video.duration || video.durationStr"
-                pos="absolute bottom-0 right-0"
-                z="2"
-                p="x-2 y-1"
-                m="1"
-                rounded="$bew-radius"
-                text="!white xs"
-                bg="black opacity-60"
-                class="group-hover:opacity-0"
-                duration-300
-              >
-                {{ video.duration ? calcCurrentTime(video.duration) : video.durationStr }}
-              </div>
-
               <div
                 class="opacity-0 group-hover/cover:opacity-100"
                 transform="scale-70 group-hover/cover:scale-100"
@@ -481,6 +662,45 @@ provide('getVideoType', () => props.type!)
                   <Icon icon="line-md:confirm" />
                 </Tooltip>
               </button>
+
+              <div
+                v-if="hasCoverStats"
+                class="video-card-cover-stats"
+                :class="{ 'video-card-cover-stats--hidden': shouldHideCoverStats }"
+              >
+                <div class="video-card-cover-stats__items">
+                  <span
+                    v-if="coverStatsVisibility.view"
+                    class="video-card-cover-stats__item"
+                  >
+                    <Icon icon="mingcute:play-circle-line" class="video-card-cover-stats__icon" aria-hidden="true" />
+                    <span class="video-card-cover-stats__value">{{ coverStatValues.view }}</span>
+                  </span>
+
+                  <span
+                    v-if="coverStatsVisibility.danmaku"
+                    class="video-card-cover-stats__item"
+                  >
+                    <Icon icon="mingcute:danmaku-line" class="video-card-cover-stats__icon" aria-hidden="true" />
+                    <span class="video-card-cover-stats__value">{{ coverStatValues.danmaku }}</span>
+                  </span>
+
+                  <span
+                    v-if="coverStatsVisibility.like"
+                    class="video-card-cover-stats__item"
+                  >
+                    <Icon icon="mingcute:thumb-up-2-line" class="video-card-cover-stats__icon" aria-hidden="true" />
+                    <span class="video-card-cover-stats__value">{{ coverStatValues.like }}</span>
+                  </span>
+                </div>
+
+                <span
+                  v-if="coverStatsVisibility.duration"
+                  class="video-card-cover-stats__item video-card-cover-stats__item--duration"
+                >
+                  <span class="video-card-cover-stats__value">{{ coverStatValues.duration }}</span>
+                </span>
+              </div>
             </template>
           </div>
 
@@ -489,23 +709,17 @@ provide('getVideoType', () => props.type!)
             v-if="!removed"
             :style="{
               width: horizontal ? '100%' : 'unset',
-              marginTop: horizontal ? '0' : '1rem',
+              marginTop: horizontal ? '0' : '0.5rem',
             }"
             flex="~"
           >
-            <!-- Author Avatar -->
-            <VideoCardAuthorAvatar
-              v-if="!horizontal && video.author"
-              :author="video.author"
-              :is-live="video.liveStatus === 1"
-            />
-            <div class="group/desc" flex="~ col" w="full" align="items-start">
+            <div class="group/desc" flex="~ col gap-2" w="full" align="items-start">
               <div flex="~ gap-1 justify-between items-start" w="full" pos="relative">
                 <h3
-                  class="keep-two-lines"
+                  class="keep-two-lines video-card-title"
                   text="overflow-ellipsis $bew-text-1 lg"
                   :class="{ 'bew-title-auto': settings.homeAdaptiveTitleAutoSize }"
-                  :style="!settings.homeAdaptiveTitleAutoSize && settings.homeAdaptiveTitleFontSize ? { fontSize: `${settings.homeAdaptiveTitleFontSize}px`, lineHeight: '1.25' } : {}"
+                  :style="titleStyle"
                   cursor="pointer"
                 >
                   <a :href="videoUrl" target="_blank" :title="video.title">
@@ -516,70 +730,85 @@ provide('getVideoType', () => props.type!)
                 <div
                   v-if="moreBtn"
                   ref="moreBtnRef"
+                  class="video-card__more-btn"
                   :class="{ 'more-active': showVideoOptions }"
                   bg="hover:$bew-fill-2 active:$bew-fill-3"
                   shrink-0 w-32px h-32px m="t--3px r--4px"
-                  grid place-items-center cursor-pointer rounded="50%" duration-300
+                  grid place-items-center cursor-pointer rounded="full" overflow="hidden"
+                  duration-300
                   @click.stop.prevent="handleMoreBtnClick"
                 >
                   <div i-mingcute:more-2-line text="lg" />
                 </div>
               </div>
-              <div text="sm $bew-text-2" w-fit m="t-2" flex="~ items-center wrap">
-                <!-- Author Avatar -->
-                <span
-                  :style="{
-                    marginBottom: horizontal ? '0.5rem' : '0',
-                  }"
-                  flex="inline items-center"
-                >
-                  <VideoCardAuthorAvatar
-                    v-if="horizontal && video.author"
-                    :author="video.author"
-                    :is-live="video.liveStatus === 1"
-                  />
-                  <VideoCardAuthorName
-                    :author="video.author"
-                  />
-                </span>
-              </div>
 
-              <div flex="~ items-center gap-1 wrap">
-                <!-- View & Danmaku Count -->
-                <div
-                  text="sm $bew-text-2" rounded="$bew-radius"
-                  inline-block
-                >
-                  <span v-if="video.view || video.viewStr">
-                    {{ video.view ? $t('common.view', { count: numFormatter(video.view) }, video.view) : `${numFormatter(video.viewStr || '0')}${$t('common.viewWithoutNum')}` }}
-                  </span>
-                  <template v-if="video.danmaku || video.danmakuStr">
-                    <span text-xs font-light mx-4px>•</span>
-                    <span>{{ video.danmaku ? $t('common.danmaku', { count: numFormatter(video.danmaku) }, video.danmaku) : `${numFormatter(video.danmakuStr || '0')}${$t('common.danmakuWithoutNum')}` }}</span>
-                  </template>
-                  <br>
+              <div
+                class="video-card-meta"
+                flex="~ gap-2 items-center"
+                w="full"
+              >
+                <VideoCardAuthorAvatar
+                  v-if="video.author"
+                  :author="video.author"
+                  :is-live="video.liveStatus === 1"
+                  compact
+                />
+
+                <div flex="~ col gap-1" w="full">
+                  <div
+                    v-if="video.author"
+                    flex="~ items-center gap-2"
+                    text="sm $bew-text-2"
+                  >
+                    <VideoCardAuthorName :author="video.author" />
+                  </div>
+
+                  <div
+                    v-if="video.tag || highlightTags.length || video.publishedTimestamp || video.capsuleText || video.type === 'vertical' || video.type === 'bangumi'"
+                    flex="~ items-center gap-2 wrap"
+                  >
+                    <span
+                      v-if="video.tag"
+                      text="sm $bew-theme-color"
+                      lh-6 p="x-2"
+                      rounded="$bew-radius"
+                      bg="$bew-theme-color-20"
+                    >
+                      {{ video.tag }}
+                    </span>
+
+                    <span
+                      v-for="extraTag in highlightTags"
+                      :key="`highlight-${extraTag}`"
+                      text="sm $bew-theme-color"
+                      lh-6 p="x-2"
+                      rounded="$bew-radius"
+                      bg="$bew-theme-color-20"
+                    >
+                      {{ extraTag }}
+                    </span>
+
+                    <span
+                      v-if="video.publishedTimestamp || video.capsuleText"
+                      bg="$bew-fill-1"
+                      p="x-2"
+                      rounded="$bew-radius"
+                      text="sm $bew-text-3"
+                      lh-6
+                    >
+                      {{ video.publishedTimestamp ? calcTimeSince(video.publishedTimestamp * 1000) : video.capsuleText?.trim() }}
+                    </span>
+
+                    <span
+                      v-if="video.type === 'vertical' || video.type === 'bangumi'"
+                      text="$bew-text-2"
+                      grid="~ place-items-center"
+                    >
+                      <div v-if="video.type === 'vertical'" i-mingcute:cellphone-2-line />
+                      <div v-else-if="video.type === 'bangumi'" i-mingcute:movie-line />
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div mt-2 flex="~ gap-1 wrap" text="sm">
-                <!-- Tag -->
-                <span
-                  v-if="video.tag"
-                  text="$bew-theme-color" lh-6 p="x-2" rounded="$bew-radius" bg="$bew-theme-color-20"
-                >
-                  {{ video.tag }}
-                </span>
-                <span
-                  v-if="video.publishedTimestamp || video.capsuleText"
-                  bg="$bew-fill-1" p="x-2" rounded="$bew-radius" text="$bew-text-3" lh-6
-                  mr-1
-                >
-                  {{ video.publishedTimestamp ? calcTimeSince(video.publishedTimestamp * 1000) : video.capsuleText?.trim() }}
-                </span>
-                <!-- Video type -->
-                <span text="$bew-text-2" grid="~ place-items-center">
-                  <div v-if="video.type === 'vertical'" i-mingcute:cellphone-2-line />
-                  <div v-else-if="video.type === 'bangumi'" i-mingcute:movie-line />
-                </span>
               </div>
             </div>
           </div>
@@ -623,6 +852,17 @@ provide('getVideoType', () => props.type!)
   --uno: "w-full";
 }
 
+.video-card__more-btn {
+  position: relative;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.video-card__more-btn::before,
+.video-card__more-btn::after {
+  border-radius: inherit;
+}
+
 .more-active {
   --uno: "opacity-100";
 }
@@ -632,5 +872,89 @@ provide('getVideoType', () => props.type!)
      Increase responsiveness and use unitless line-height for better small-size rendering */
   font-size: clamp(12px, calc((var(--bew-card-width, var(--bew-home-card-min-width, 280px)) / 280) * 20px), 30px);
   line-height: clamp(1.15, calc(1.1 + (var(--bew-card-width, var(--bew-home-card-min-width, 280px)) / 280) * 0.2), 1.5);
+}
+
+.video-card-title {
+  min-height: calc(var(--bew-title-line-height, 1.35) * 2em);
+}
+
+.video-card-cover-stats {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.4rem 0.45rem 0.3rem;
+  color: #fff;
+  font-size: var(--video-card-stats-font-size, 0.75rem);
+  opacity: 1;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.video-card-cover-stats::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.8) 0%,
+    rgba(0, 0, 0, 0.7) 30%,
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0, 0.3) 70%,
+    rgba(0, 0, 0, 0.15) 85%,
+    rgba(0, 0, 0, 0.05) 95%,
+    transparent 100%
+  );
+  height: 140%;
+  border-bottom-left-radius: inherit;
+  border-bottom-right-radius: inherit;
+  pointer-events: none;
+}
+
+.video-card-cover-stats > * {
+  position: relative;
+  z-index: 1;
+}
+
+.video-card-cover-stats__items {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+  flex-shrink: 1;
+}
+
+.video-card-cover-stats__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.video-card-cover-stats__icon {
+  font-size: 0.85rem;
+  color: currentColor;
+}
+
+.video-card-cover-stats__value {
+  font-size: var(--video-card-stats-font-size, 0.75rem);
+  line-height: 1;
+}
+
+.video-card-cover-stats__item--duration {
+  margin-left: auto;
+  font-size: var(--video-card-stats-font-size, 0.75rem);
+}
+
+.video-card-cover-stats--hidden {
+  opacity: 0;
+  visibility: hidden;
 }
 </style>

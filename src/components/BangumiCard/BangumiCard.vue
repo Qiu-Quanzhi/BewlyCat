@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import type { ComponentPublicInstance } from 'vue'
+
 import { useDark } from '~/composables/useDark'
 import { settings } from '~/logic'
-import { useMainStore } from '~/stores/mainStore'
 import { numFormatter } from '~/utils/dataFormatter'
 import { removeHttpFromUrl } from '~/utils/main'
 
@@ -12,12 +13,12 @@ defineProps<{
   bangumi: Bangumi
   horizontal?: boolean
 }>()
-const cardRootRef = ref<HTMLElement | null>(null)
+const cardRootRef = ref<HTMLElement | ComponentPublicInstance | null>(null)
 let cardResizeObserver: ResizeObserver | null = null
 
 onMounted(() => {
-  const el = cardRootRef.value
-  if (!el)
+  const el = resolveCardElement()
+  if (!el || typeof ResizeObserver === 'undefined')
     return
   cardResizeObserver = new ResizeObserver((entries) => {
     for (const entry of entries) {
@@ -32,6 +33,16 @@ onBeforeUnmount(() => {
   cardResizeObserver?.disconnect()
   cardResizeObserver = null
 })
+
+function resolveCardElement(): HTMLElement | null {
+  const el = cardRootRef.value
+  if (!el)
+    return null
+  if (el instanceof HTMLElement)
+    return el
+  const exposed = (el as ComponentPublicInstance).$el
+  return exposed instanceof HTMLElement ? exposed : null
+}
 
 interface Bangumi {
   url: string
@@ -53,11 +64,6 @@ interface Bangumi {
 }
 
 const { isDark } = useDark()
-const { setActivatedCover } = useMainStore()
-
-function handleMouseEnter(bangumi: Bangumi) {
-  setActivatedCover(`${removeHttpFromUrl(bangumi.cover)}@466w_622h.webp`)
-}
 </script>
 
 <template>
@@ -75,7 +81,6 @@ function handleMouseEnter(bangumi: Bangumi) {
       content-visibility-auto intrinsic-size-400px
       transition="all ease-in-out 300"
       rounded="$bew-radius" h-fit
-      @mouseenter="handleMouseEnter(bangumi)"
     >
       <!-- Cover -->
       <div

@@ -12,13 +12,14 @@ import RESET_BEWLY_CSS from '~/styles/reset.css?raw'
 import { runWhenIdle } from '~/utils/lazyLoad'
 import { getLocalWallpaper, hasLocalWallpaper, isLocalWallpaperUrl } from '~/utils/localWallpaper'
 import { compareVersions, injectCSS, isHomePage, isInIframe, isNotificationPage, isVideoOrBangumiPage } from '~/utils/main'
-import { defaultMode, disableAutoPlayCollection, handleVideoPageNavigation, isCollectionVideo, isVideoPage, startAutoExitFullscreenMonitoring, webFullscreen, widescreen } from '~/utils/player'
+import { applyDefaultDanmakuState, defaultMode, disableAutoPlayCollection, handleVideoPageNavigation, isCollectionVideo, isVideoPage, startAutoExitFullscreenMonitoring, webFullscreen, widescreen } from '~/utils/player'
 import { initRandomPlay, resetRandomPlayInitialization } from '~/utils/randomPlay'
 import { setupShortcutHandlers } from '~/utils/shortcuts'
 import { SVG_ICONS } from '~/utils/svgIcons'
 import { openLinkInBackground } from '~/utils/tabs'
 
 import { version } from '../../package.json'
+import { setupPhotoViewerAdapter } from './features/photoViewer'
 import App from './views/App.vue'
 
 const isFirefox: boolean = /Firefox/i.test(navigator.userAgent)
@@ -147,6 +148,7 @@ if (isSupportedPages() || isSupportedIframePages()) {
   const shouldApplyFullStyles = settings.value.adaptToOtherPageStyles && !isFestivalPage()
   if (shouldApplyFullStyles) {
     document.documentElement.classList.add('bewly-design')
+    setupPhotoViewerAdapter()
 
     // Remove the Bilibili Evolved's dark mode style
     runWhenIdle(async () => {
@@ -218,6 +220,7 @@ function applyDefaultPlayerMode() {
     }
   }
   setupShortcutHandlers()
+  applyDefaultDanmakuState()
   // 启动自动退出全屏监听
   setTimeout(() => {
     startAutoExitFullscreenMonitoring()

@@ -7,6 +7,8 @@ common:
   viewWithoutNum: 次
   danmaku: '{count} 彈幕'
   danmakuWithoutNum: 彈幕
+  like: '{count} 按讚'
+  likeWithoutNum: 按讚
   anime_follow_count: '{count}人追蹤'
   year: 年前
   month: 個月前
@@ -36,6 +38,7 @@ common:
     import: 匯入
     export: 匯出
     undo_refresh: 撤銷更新
+    remove: 移除
   table:
     index: 索引
     title: 標題
@@ -148,6 +151,12 @@ settings:
   block_top_search_page_ads_desc: |
     有時候，搜尋結果上方的廣告實際上是年末總結、年度報告這些。 如果你不想這些內容被誤刪，請停用此選項。
   video_default_player_mode: 影片預設顯示模式
+  video_danmaku_default_state: 影片預設彈幕狀態
+  video_danmaku_default_state_desc: 開啓影片時自動調整彈幕開關，也可以保持原樣。
+  video_danmaku_default_state_opt:
+    system: 不調整
+    on: 預設開啓
+    off: 預設關閉
   video_player_mode:
     default: 預設
     web_fullscreen: 網頁全螢幕
@@ -419,6 +428,8 @@ settings:
   clean_url_argument_desc: 自動清理URL中的追蹤參數，使連結更加簡潔
   show_ip_location: 顯示IP歸屬地
   show_ip_location_desc: 在視頻/動態評論區顯示IP歸屬地
+  show_sex: 顯示使用者性別
+  show_sex_desc: 在視頻/動態評論區顯示使用者性別
   video_player_scroll: 調整顯示模式後滾動
   video_player_scroll_desc: 啟用後，在默認模式為寬屏和默認時，會自動滾動到合適位置。
   volume_balance:
@@ -456,6 +467,13 @@ settings:
   group_topbar_components: 頂欄組件設置
   topbar_components_adjustment: 頂欄組件角標設置
   topbar_components_adjustment_desc: 配置各個頂欄圖標的角標顯示方式
+  group_topbar_pinned_channels: 頂欄常駐分區
+  topbar_pinned_channels_desc: 可將 Logo 展開內的分區固定在頂欄外側，並調整顯示順序。
+  topbar_pinned_channels_title: 常駐分區
+  topbar_pinned_channels_hint: 點擊卡片即可固定或取消，點擊順序決定顯示順序。排在後面的分區會在空間不足時優先隱藏。
+  topbar_pinned_channels_all_selected: 所有可用分區都已加入。
+  topbar_pinned_channels_empty: 尚未新增任何常駐分區。
+  topbar_pinned_channels_order_tip: 點擊順序決定顯示順序，再點一次即可取消固定。
   visibility: 顯示
 auth:
   auth_access_key_first: 在這之前請先授權 BewlyBewly 使用 access key

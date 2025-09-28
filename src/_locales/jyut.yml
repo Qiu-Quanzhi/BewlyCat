@@ -7,6 +7,8 @@ common:
   viewWithoutNum: 次
   danmaku: '{count} 彈幕'
   danmakuWithoutNum: 彈幕
+  like: '{count} 個讚'
+  likeWithoutNum: 讚
   anime_follow_count: '{count}人追緊'
   year: 年前
   month: 個月前
@@ -36,6 +38,7 @@ common:
     import: 匯入
     export: 匯出
     undo_refresh: 復原更新
+    remove: 移除
   table:
     index: 索引
     title: 標題
@@ -159,6 +162,13 @@ settings:
     number: 數字
     dot: 圓點
     none: 唔顯示
+  group_topbar_pinned_channels: 頂欄固定分區
+  topbar_pinned_channels_desc: 可以將 Logo 展開嘅分區固定喺頂欄外面，並且設定顯示順序。
+  topbar_pinned_channels_title: 固定分區
+  topbar_pinned_channels_hint: 撳卡片就可以固定或者取消，撳落去嘅順序會決定顯示順序。排後面嗰啲會喺空間唔夠時優先收埋。
+  topbar_pinned_channels_all_selected: 所有可用分區都已經加入。
+  topbar_pinned_channels_empty: 仲未揀任何固定分區。
+  topbar_pinned_channels_order_tip: 撳嘅順序決定顯示，再撳一次就會取消固定。
   open_notifications_page_as_drawer: 用櫃桶打開通知頁面
   always_use_dock: 點都要用 Dock
   always_use_dock_desc: 啓用後，Dock 點都要用佢而唔係用側邊欄。我哋推介你同時啓用自動收埋 Dock 去。
@@ -389,6 +399,12 @@ settings:
     widescreen: 闊螢幕模式
     widescreen_desc: 切換闊螢幕模式。
   video_default_player_mode: 預設影片顯示模式
+  video_danmaku_default_state: 影片預設彈幕狀態
+  video_danmaku_default_state_desc: 開片時自動幫你調整彈幕開關，亦可以保持唔變。
+  video_danmaku_default_state_opt:
+    system: 唔調整
+    on: 預設開啟
+    off: 預設關閉
   video_player_mode:
     default: 預設
     fullscreen: 全螢幕
@@ -396,6 +412,8 @@ settings:
     widescreen: 闊螢幕
   show_ip_location: 顯示 IP 歸屬地
   show_ip_location_desc: 喺影片/動向頁留言區顯示 IP 歸屬地。
+  show_sex: 顯示用戶性別
+  show_sex_desc: 喺影片/動向頁留言區顯示用戶性別。
   video_player_scroll: 校好顯示模式後自動轆到合適嘅位置
   video_player_scroll_desc: 啓用後，若果顯示模式係闊螢幕或預設嗰陣，會自動轆到合適嘅位置。
   group_fonts: ''
